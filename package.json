@@ -1,0 +1,27 @@
+{
+  "name": "localization",
+  "version": "1.0.0",
+  "description": "Tools and scripts for enabling multilingual support in self-hosted Bitrix24 (Box).",
+  "main": "index.js",
+  "scripts": {
+    "test": "vitest run",
+    "aggregate": "tsx scripts/aggregate.ts",
+    "restore": "tsx scripts/restore.ts"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "module",
+  "devDependencies": {
+    "@types/node": "^25.2.0",
+    "fast-glob": "^3.3.3",
+    "ts-node": "^10.9.2",
+    "tsx": "^4.21.0",
+    "typescript": "^5.9.3",
+    "vitest": "^4.0.18"
+  },
+  "dependencies": {
+    "iconv-lite": "^0.7.2",
+    "jschardet": "^3.1.4"
+  }
+}

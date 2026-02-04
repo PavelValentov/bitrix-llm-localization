@@ -1,0 +1,28 @@
+.DS_Store
+.env
+vendor/
+node_modules/
+*.log
+config/secrets.php
+
+# Memory Bank
+/memory-bank
+
+# Build artifacts
+dist/
+coverage/
+
+# Temporary files
+*.tmp
+*.bak
+*.swp
+
+# Bitrix Localization Data
+business50/
+business100/
+localization.json
+*.tar.gz
+
+# Local dev configs
+.vscode/
+.idea/
