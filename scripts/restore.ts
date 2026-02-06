@@ -2,9 +2,25 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { restore } from '../src/restorer.js';
 
+const USAGE = `
+Usage: pnpm restore <input-json> <output-folder>
+
+  input-json     Path to localization.json
+  output-folder  Directory for restored PHP files
+
+Examples:
+  pnpm restore output/business50/localization.json output/business50-restored
+  pnpm restore ./localization.json ./restored
+`;
+
 const args = process.argv.slice(2);
-const jsonPath = args[0] ? path.resolve(args[0]) : path.resolve('./business50/localization.json');
-const targetDir = args[1] ? path.resolve(args[1]) : path.resolve('./business100');
+if (args.length < 2) {
+    console.log(USAGE.trim());
+    process.exit(0);
+}
+
+const jsonPath = path.resolve(args[0]);
+const targetDir = path.resolve(args[1]);
 
 (async () => {
     try {

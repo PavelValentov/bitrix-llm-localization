@@ -3,6 +3,7 @@
 vendor/
 node_modules/
 *.log
+/log
 config/secrets.php
 
 # Memory Bank
@@ -11,6 +12,15 @@ config/secrets.php
 # Build artifacts
 dist/
 coverage/
+logs/
+input/
+output/
+test-sample/
+
+# Python
+.venv/
+__pycache__/
+*.pyc
 
 # Temporary files
 *.tmp

@@ -1,0 +1,46 @@
+---
+description: Scripts must show usage/help when run without required parameters
+globs: scripts/*.ts
+alwaysApply: false
+---
+
+# CLI Scripts: Help on Missing Parameters
+
+When a script is run **without required parameters**, it MUST display usage/help instead of failing with an error.
+
+## Rule
+
+- If the script requires positional args (e.g. input file, output folder) and they are missing → print usage and exit with code 0 or 1.
+- Do NOT fail with "file not found" or similar when the user simply ran the script without args.
+
+## Usage Block Format
+
+```typescript
+const USAGE = `
+Usage: pnpm <script-name> <input> <output> [options]
+
+Examples:
+  pnpm fill-gaps output/business50/localization.json output/filled
+  pnpm fill-gaps output/business50/localization.json output/filled --dry-run
+
+Options:
+  --dry-run    No file write, only log
+`;
+```
+
+## Implementation Pattern
+
+```typescript
+const args = process.argv.slice(2).filter((a) => !a.startsWith('--'));
+if (args.length < 2) {
+  console.log(USAGE);
+  process.exit(1);
+}
+```
+
+## Affected Scripts
+
+- `scripts/fill-gaps.ts` — requires: input JSON, output folder
+- `scripts/restore.ts` — requires: input JSON, output folder
+- `scripts/aggregate.ts` — requires: root dir, output file (has defaults)
+- `scripts/translate.ts` — has defaults; consider help when no input

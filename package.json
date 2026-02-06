@@ -6,13 +6,16 @@
   "scripts": {
     "test": "vitest run",
     "aggregate": "tsx scripts/aggregate.ts",
-    "restore": "tsx scripts/restore.ts"
+    "restore": "tsx scripts/restore.ts",
+    "translate": "tsx scripts/translate.ts",
+    "fill-gaps": "tsx scripts/fill-gaps.ts"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "type": "module",
   "devDependencies": {
+    "@types/cli-progress": "^3.11.6",
     "@types/node": "^25.2.0",
     "fast-glob": "^3.3.3",
     "ts-node": "^10.9.2",
@@ -21,7 +24,17 @@
     "vitest": "^4.0.18"
   },
   "dependencies": {
+    "cli-progress": "^3.12.0",
+    "dotenv": "^17.2.3",
     "iconv-lite": "^0.7.2",
-    "jschardet": "^3.1.4"
+    "jschardet": "^3.1.4",
+    "jsonrepair": "^3.13.2",
+    "openai": "^6.17.0",
+    "zod": "^3.25.76"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "esbuild"
+    ]
   }
 }
