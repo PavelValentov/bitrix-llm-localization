@@ -15,8 +15,8 @@
 
 1.  Клонируйте репозиторий:
     ```bash
-    git clone https://github.com/your-repo/bitrix-localization.git
-    cd bitrix-localization
+    git clone https://github.com/PavelValentov/bitrix-llm-localization.git
+    cd bitrix-llm-localization
     ```
 
 2.  Установите зависимости:
