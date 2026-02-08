@@ -3,12 +3,20 @@
  */
 
 /**
+ * Conservative chars-per-token for JSON/structured text.
+ * Real tokenizers (tiktoken, etc.) use ~2-2.5 chars/token for JSON
+ * due to punctuation, quotes, escaping. We use 2.5 to avoid overflow.
+ */
+const CHARS_PER_TOKEN_CONSERVATIVE = 2.5;
+
+/**
  * Estimate token count for a text string
  * 
  * Rules of thumb:
  * - English: ~4 characters per token
  * - Russian/Cyrillic: ~3 characters per token
  * - Technical text (code, placeholders): ~5 characters per token
+ * - JSON/structured: ~2.5 chars/token (conservative)
  * 
  * @param text - Text to estimate tokens for
  * @returns Estimated token count
@@ -36,6 +44,15 @@ export function estimateTokens(text: string): number {
 }
 
 /**
+ * Estimate tokens for JSON-serialized content (conservative).
+ * Real prompt includes quotes, commas, newlines, indentation.
+ */
+export function estimateTokensForJson(text: string): number {
+  if (!text) return 0;
+  return Math.ceil(text.length / CHARS_PER_TOKEN_CONSERVATIVE);
+}
+
+/**
  * Estimate tokens for a translation item including all its context
  * 
  * @param item - Translation item with key, filename, context, and targets
@@ -58,8 +75,8 @@ export function estimateItemTokens(item: {
     tokens += estimateTokens(text);
   }
 
-  // JSON structure overhead (~10% of content)
-  tokens = Math.ceil(tokens * 1.1);
+  // JSON structure overhead: quotes, commas, newlines, indent. ~80% extra for serialization.
+  tokens = Math.ceil(tokens * 1.8);
 
   return tokens;
 }
@@ -67,13 +84,18 @@ export function estimateItemTokens(item: {
 /**
  * Estimate tokens for system prompt (fixed overhead)
  */
-export const SYSTEM_PROMPT_TOKENS = 150;
+export const SYSTEM_PROMPT_TOKENS = 200;
 
 /**
  * Estimate tokens for JSON response wrapper overhead per item
  * (includes "items", "key", "translations", "lang", "text" fields)
  */
-export const RESPONSE_OVERHEAD_PER_ITEM = 20;
+export const RESPONSE_OVERHEAD_PER_ITEM = 30;
+
+/**
+ * Hard cap: max items per batch. Prevents context overflow even if estimation is off.
+ */
+export const MAX_BATCH_ITEMS = 50;
 
 /**
  * Calculate estimated response tokens for a batch of items
@@ -134,9 +156,12 @@ export function buildDynamicBatches<T extends {
     // Check if adding this item would exceed limits
     const potentialResponseTokens = estimateResponseTokens([...currentBatch, item]);
     
+    const wouldExceedPrompt = potentialPromptTokens > maxPromptTokens;
+    const wouldExceedResponse = potentialResponseTokens > maxResponseTokens;
+    const wouldExceedHardCap = currentBatch.length >= MAX_BATCH_ITEMS;
+    
     if (currentBatch.length > 0 && 
-        (potentialPromptTokens > maxPromptTokens || 
-         potentialResponseTokens > maxResponseTokens)) {
+        (wouldExceedPrompt || wouldExceedResponse || wouldExceedHardCap)) {
       // Start new batch
       batches.push(currentBatch);
       currentBatch = [item];

@@ -3,6 +3,7 @@ import path from 'path';
 import { Translator } from '../src/translator.js';
 import { config } from '../src/config.js';
 import { buildDynamicBatches } from '../src/token-estimator.js';
+import { hasValidTranslationValue } from '../src/translation-utils.js';
 import cliProgress from 'cli-progress';
 
 // Type definition for localization.json
@@ -79,7 +80,7 @@ export async function runTranslation(
       const keys = localizationData[fp];
       for (const [, langs] of Object.entries(keys)) {
         const existingLangs = Object.entries(langs)
-          .filter(([_, val]) => val !== null && val !== "")
+          .filter(([_, val]) => hasValidTranslationValue(val))
           .map(([l]) => l);
         if (existingLangs.length === 0) continue;
         const missing = requiredLangs.filter(l => !existingLangs.includes(l));
@@ -89,7 +90,7 @@ export async function runTranslation(
       }
       const hasWork = Object.entries(keys).some(([, langs]) => {
         const existing = Object.entries(langs)
-          .filter(([_, val]) => val !== null && val !== "")
+          .filter(([_, val]) => hasValidTranslationValue(val))
           .map(([l]) => l);
         if (existing.length === 0) return false;
         return requiredLangs.some(l => !existing.includes(l));
@@ -123,7 +124,7 @@ export async function runTranslation(
       // 1. Scan file for missing translations
       for (const [key, langs] of Object.entries(keys)) {
         const existingLangs = Object.entries(langs)
-          .filter(([_, val]) => val !== null && val !== "" && val.trim() !== "")
+          .filter(([_, val]) => hasValidTranslationValue(val))
           .reduce((acc, [l, v]) => ({ ...acc, [l]: v as string }), {} as Record<string, string>);
 
         // If no context at all, skip (can't translate from nothing)

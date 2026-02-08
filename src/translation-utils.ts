@@ -3,6 +3,19 @@
  * Protects placeholders, cleans output, validates translations.
  */
 
+/**
+ * Check if a value can be used as translation context (non-empty, meaningful).
+ * Treats null, undefined, "", "   ", "null" (string) as empty.
+ */
+export function hasValidTranslationValue(val: unknown): boolean {
+  if (val == null) return false;
+  if (typeof val !== 'string') return false;
+  const t = val.trim();
+  if (t === '') return false;
+  if (t.toLowerCase() === 'null') return false;
+  return true;
+}
+
 const PLACEHOLDER_PATTERNS = [
   /#\w+#/g,
   /\{\w+\}/g,

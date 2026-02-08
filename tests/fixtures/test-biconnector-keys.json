@@ -1,0 +1,16 @@
+{
+  "biconnector/install/components/bitrix/biconnector.limit.lock/lang/{lang}/class.php": {
+    "CC_BLL_CONTENT_BLOCKED": {
+      "ua": "Вивантаження даних у зовнішні системи заблоковано через регулярне перевищення ліміту за кількістю рядків. Ви можете зняти блокування, щоб продовжити вивантаження даних. <a href=\"#UNBLOKING_HELP_URL#\" target=\"blank\">Докладніше</a>",
+      "en": "Data loading to external systems is blocked due to regular exceeding of the row count limit. You can remove the block to continue data loading. <a href=\"#UNBLOKING_HELP_URL#\" target=\"blank\">Details</a>",
+      "ru": "Загрузка данных в внешние системы заблокирована из-за регулярного превышения лимита по количеству строк. Вы можете снять блокировку, чтобы продолжить загрузку данных. <a href=\"#UNBLOKING_HELP_URL#\" target=\"blank\">Детали</a>",
+      "tr": "Dış sistemlere veri indirme, satır sayısı sınırlamasını düzenli olarak aştığınız için engellenmiştir. Blokajı kaldırarak veri indirme işlemini devam ettirebilirsiniz. <a href=\"#UNBLOKING_HELP_URL#\" target=\"blank\">Detaylar</a>"
+    },
+    "CC_BLL_TITLE_BLOCKED": {
+      "ua": "Робота зі звітами заблокована",
+      "en": "Report work is blocked",
+      "ru": "Работа с отчетами заблокирована",
+      "tr": "Raporlar Bloke Edildi"
+    }
+  }
+}
