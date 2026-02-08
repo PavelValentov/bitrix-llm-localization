@@ -31,7 +31,10 @@ vi.mock('../src/translator.js', () => {
 // Mock config
 vi.mock('../src/config.js', () => ({
   config: {
+    translationBackend: 'api',
     openai: { apiKey: "test", model: "gpt-4o" },
+    local: { url: 'http://localhost:1234/v1', model: 'test' },
+    localServer: { url: 'http://127.0.0.1:8765', reloadEveryBatches: 10 },
     batchSize: 2,
     systemPrompt: "prompt"
   }

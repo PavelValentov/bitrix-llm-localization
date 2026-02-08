@@ -1,38 +1,59 @@
-.DS_Store
-.env
-vendor/
-node_modules/
+node_modules
+dist
 *.log
-/log
-config/secrets.php
+.env
 
-# Memory Bank
-/memory-bank
+# Test outputs (keep tests in tests/ directory only!)
+/test-*.json
+/test-*.sh
+/test-*.mjs
+/test-*.js
+/debug-*.js
+/debug-*.mjs
+/out*
+/output
+/localization.json
 
-# Build artifacts
-dist/
-coverage/
-logs/
-input/
+# Translation outputs
 output/
-test-sample/
-
-# Python
-.venv/
-__pycache__/
+logs/
+mlx-server/venv/
 *.pyc
+__pycache__/
+
+# Bitrix modules / aggregated data (large, generated)
+business50/
+input/
+
+# IDE / workspace
+.vscode/
+.idea/
+.cursor/
+*.code-workspace
+*.swp
+*.swo
+*~
+
+# Memory Bank (internal AI context)
+memory-bank/
+
+# Internal reports / debug docs (root only)
+/CHECK-*.md
+/CLEANUP-*.md
+/DYNAMIC-*.md
+/FINAL-*.md
+/FINAL-*-REPORT.md
+/HUGE-KEYS-*.md
+/SKIP-KEYS-*.md
+/CHANGELOG-*.md
+/ДИНАМИЧЕСКИЙ-*.md
+/debug_*.ts
+
+# OS
+.DS_Store
+Thumbs.db
 
 # Temporary files
 *.tmp
 *.bak
-*.swp
-
-# Bitrix Localization Data
-business50/
-business100/
-localization.json
-*.tar.gz
-
-# Local dev configs
-.vscode/
-.idea/
+*.backup

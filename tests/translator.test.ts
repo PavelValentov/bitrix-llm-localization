@@ -3,11 +3,14 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 // Mock config BEFORE importing Translator
 vi.mock('../src/config.js', () => ({
   config: {
+    translationBackend: 'api',
     openai: {
       apiKey: "test-key",
       model: "gpt-4o",
       baseURL: undefined
     },
+    local: { url: 'http://localhost:1234/v1', model: 'test-model' },
+    localServer: { url: 'http://127.0.0.1:8765', reloadEveryBatches: 10 },
     batchSize: 50,
     systemPrompt: "System Prompt"
   }

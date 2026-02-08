@@ -5,10 +5,12 @@
   "main": "index.js",
   "scripts": {
     "test": "vitest run",
+    "test:e2e": "vitest run --config vitest.e2e.config.ts",
     "aggregate": "tsx scripts/aggregate.ts",
     "restore": "tsx scripts/restore.ts",
     "translate": "tsx scripts/translate.ts",
-    "fill-gaps": "tsx scripts/fill-gaps.ts"
+    "fill-gaps": "tsx scripts/fill-gaps.ts",
+    "mlx-server": "python mlx-server/mlx_server.py -m ~/.lmstudio/models/lmstudio-community/Qwen3-8B-MLX-8bit -p 8765"
   },
   "keywords": [],
   "author": "",
