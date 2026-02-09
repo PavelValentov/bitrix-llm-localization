@@ -28,13 +28,15 @@ vi.mock('../src/translator.js', () => {
   };
 });
 
-// Mock config
+// Mock config (must include maxPromptTokens/maxResponseTokens for buildDynamicBatches)
 vi.mock('../src/config.js', () => ({
   config: {
     translationBackend: 'api',
     openai: { apiKey: "test", model: "gpt-4o" },
     local: { url: 'http://localhost:1234/v1', model: 'test' },
     localServer: { url: 'http://127.0.0.1:8765', reloadEveryBatches: 10 },
+    maxPromptTokens: 8192,
+    maxResponseTokens: 16384,
     batchSize: 2,
     systemPrompt: "prompt"
   }
@@ -142,5 +144,39 @@ describe('Translation Script', () => {
     expect(callArgs).toHaveLength(1);
     expect(callArgs[0].key).toBe("KEY_PARTIAL");
     expect(callArgs[0].targets).toEqual(["ua"]);
+  });
+
+  it('should treat files with only huge keys (>2048 chars) as complete (pre-scan aligned with main loop)', async () => {
+    const hugeText = 'x'.repeat(2050);
+    const inputData = {
+      "huge_only.php": {
+        "HUGE_KEY": { "ru": hugeText, "en": null, "ua": null }
+      },
+      "mixed.php": {
+        "NORMAL_KEY": { "ru": "Текст", "en": null },
+        "HUGE_KEY": { "ru": hugeText, "en": null }
+      }
+    };
+    fsMocks.readFile.mockResolvedValue(JSON.stringify(inputData));
+
+    translatorMocks.translateFileBatch.mockResolvedValue({
+      "NORMAL_KEY": { "en": "Text" }
+    });
+
+    await runTranslation('dummy.json', ['en']);
+
+    // Only mixed.php has translatable keys (NORMAL_KEY); huge_only.php is skipped entirely
+    expect(translatorMocks.translateFileBatch).toHaveBeenCalledTimes(1);
+    const callArgs = translatorMocks.translateFileBatch.mock.calls[0][0];
+    expect(callArgs).toHaveLength(1);
+    expect(callArgs[0].key).toBe("NORMAL_KEY");
+    // HUGE_KEY never sent - skipped; huge_only.php contributes 0 items
+    expect(callArgs.some((b: { key: string }) => b.key === "HUGE_KEY")).toBe(false);
+
+    const lastCall = fsMocks.writeFile.mock.calls[fsMocks.writeFile.mock.calls.length - 1];
+    const savedData = JSON.parse(lastCall[1]);
+    expect(savedData["mixed.php"]["NORMAL_KEY"]["en"]).toBe("Text");
+    // HUGE_KEY stays null - we never translate it
+    expect(savedData["mixed.php"]["HUGE_KEY"]["en"]).toBeNull();
   });
 });

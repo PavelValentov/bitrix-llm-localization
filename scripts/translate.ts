@@ -74,6 +74,8 @@ export async function runTranslation(
     process.on('SIGTERM', onInterrupt);
 
     // Pre-scan: count files that need translation vs already complete
+    // MUST match main loop logic: skip huge keys (>2048 chars) - we never translate them
+    const MAX_KEY_LENGTH = 2048;
     let filesNeedWork = 0;
     let totalMissingKeys = 0;
     for (const fp of filePaths) {
@@ -81,19 +83,23 @@ export async function runTranslation(
       for (const [, langs] of Object.entries(keys)) {
         const existingLangs = Object.entries(langs)
           .filter(([_, val]) => hasValidTranslationValue(val))
-          .map(([l]) => l);
+          .map(([l, v]) => [l, v] as [string, string | null]);
         if (existingLangs.length === 0) continue;
-        const missing = requiredLangs.filter(l => !existingLangs.includes(l));
-        if (missing.length > 0) {
-          totalMissingKeys++;
-        }
+        const hasHuge = existingLangs.some(([, v]) => typeof v === 'string' && v.length > MAX_KEY_LENGTH);
+        if (hasHuge) continue; // skip in count - we never translate these
+        const existingLangCodes = existingLangs.map(([l]) => l);
+        const missing = requiredLangs.filter(l => !existingLangCodes.includes(l));
+        if (missing.length > 0) totalMissingKeys++;
       }
       const hasWork = Object.entries(keys).some(([, langs]) => {
         const existing = Object.entries(langs)
           .filter(([_, val]) => hasValidTranslationValue(val))
-          .map(([l]) => l);
+          .map(([l, v]) => [l, v] as [string, string | null]);
         if (existing.length === 0) return false;
-        return requiredLangs.some(l => !existing.includes(l));
+        const hasHuge = existing.some(([, v]) => typeof v === 'string' && v.length > MAX_KEY_LENGTH);
+        if (hasHuge) return false; // skip - we never translate these
+        const existingLangCodes = existing.map(([l]) => l);
+        return requiredLangs.some(l => !existingLangCodes.includes(l));
       });
       if (hasWork) filesNeedWork++;
     }
@@ -130,10 +136,10 @@ export async function runTranslation(
         // If no context at all, skip (can't translate from nothing)
         if (Object.keys(existingLangs).length === 0) continue;
 
-        // Skip keys with huge values (>2048 chars) - too expensive to translate
-        const hasHugeValues = Object.values(existingLangs).some(val => val.length > 2048);
+        // Skip keys with huge values (>MAX_KEY_LENGTH chars) - too expensive to translate
+        const hasHugeValues = Object.values(existingLangs).some(val => val.length > MAX_KEY_LENGTH);
         if (hasHugeValues) {
-          console.log(`   ⏭️  Skipping huge key: ${key} (>${2048} chars)`);
+          console.log(`   ⏭️  Skipping huge key: ${key} (>${MAX_KEY_LENGTH} chars)`);
           continue;
         }
 
