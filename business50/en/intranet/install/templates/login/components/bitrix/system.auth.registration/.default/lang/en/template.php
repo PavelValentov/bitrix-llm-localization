@@ -1,0 +1,23 @@
+<?php
+$MESS["INTRANET_AUTH_CAPTCHA_PROMT"] = "Enter text";
+$MESS["INTRANET_AUTH_CHECK_EMAIL"] = "Check your email";
+$MESS["INTRANET_AUTH_CONFIRM"] = "Confirm password";
+$MESS["INTRANET_AUTH_CONTINUE_BUTTON"] = "Continue";
+$MESS["INTRANET_AUTH_EMAIL"] = "Email address";
+$MESS["INTRANET_AUTH_EMAIL_PLACEHOLDER"] = "address@example.com";
+$MESS["INTRANET_AUTH_EMAIL_SENT"] = "Registration confirmation has been sent to the specified email address.";
+$MESS["INTRANET_AUTH_JOIN_TEXT"] = "Join the team";
+$MESS["INTRANET_AUTH_LAST_NAME"] = "Last name";
+$MESS["INTRANET_AUTH_LAST_NAME_PLACEHOLDER"] = "Smith";
+$MESS["INTRANET_AUTH_LINK"] = "Log in";
+$MESS["INTRANET_AUTH_LOGIN"] = "Login";
+$MESS["INTRANET_AUTH_LOGIN_HINT"] = "Login must be at least 3 characters.";
+$MESS["INTRANET_AUTH_LOGIN_PLACEHOLDER"] = "john";
+$MESS["INTRANET_AUTH_NAME"] = "First name";
+$MESS["INTRANET_AUTH_NAME_PLACEHOLDER"] = "John";
+$MESS["INTRANET_AUTH_PASSWORD"] = "Password";
+$MESS["INTRANET_AUTH_PASSWORD_TITLE"] = "Create password";
+$MESS["INTRANET_AUTH_REGISTER_BUTTON"] = "Register";
+$MESS["INTRANET_AUTH_REQUIRED_FIELD"] = "(required)";
+$MESS["INTRANET_AUTH_USER_DATA_TITLE"] = "Enter your information";
+$MESS["INTRANET_USER_PROPERTIES_TITLE"] = "Additional fields";

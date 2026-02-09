@@ -1,0 +1,24 @@
+<?php
+$MESS['SIGN_DOCUMENT_SETUP_TITLE_HEAD_LABEL'] = 'Название документа';
+$MESS['SIGN_DOCUMENT_SETUP_TITLE_TEMPLATE_HEAD_LABEL'] = 'Название шаблона';
+$MESS['SIGN_DOCUMENT_SETUP_TITLE_LABEL'] = 'Название';
+$MESS['SIGN_DOCUMENT_SETUP_NUM_LABEL'] = 'Регистрационный номер';
+$MESS['SIGN_DOCUMENT_SETUP_TITLE_HINT'] = 'Название документа видят все стороны';
+$MESS['SIGN_DOCUMENT_SETUP_TYPE'] = 'Код документа';
+$MESS['SIGN_DOCUMENT_SETUP_HEADER'] = 'Подготовьте документ для подписи';
+$MESS['SIGN_DOCUMENT_SETUP_TEMPLATE_HEADER'] = 'Подготовьте документ';
+$MESS['SIGN_DOCUMENT_SETUP_DATE_LABEL'] = 'Дата создания документа';
+$MESS['SIGN_DOCUMENT_SETUP_TYPE_HINT'] = 'Код документа необходим для хранения кадровых документов. Указывайте его, ориентируясь на приказ Минтруда РФ №578н';
+$MESS['SIGN_DOCUMENT_SETUP_SENDER_TYPE_TITLE'] = 'Кто будет отправлять документы по шаблону';
+$MESS['SIGN_DOCUMENT_SETUP_SENDER_TYPE_HELP_LINK'] = '[helpdesklink]Как работать с шаблонами[/helpdesklink]';
+$MESS['SIGN_DOCUMENT_SETUP_SENDER_TYPE_EMPLOYEE'] = 'Сотрудники';
+$MESS['SIGN_DOCUMENT_SETUP_SENDER_TYPE_COMPANY'] = 'Компания';
+$MESS['SIGN_DOCUMENT_SETUP_NUM_LABEL_HINT'] = 'Для правильного хранения и лёгкого поиска кадровых документов указывайте регистрационный номер документа';
+$MESS['SIGN_DOCUMENT_SETUP_ADD_DOCUMENT'] = 'Добавить документ';
+$MESS['SIGN_DOCUMENT_SETUP_ADD_ANOTHER_DOCUMENT'] = 'Еще документ';
+$MESS['SIGN_DOCUMENT_SETUP_DOCUMENT_LIMIT_NOTICE'] = 'Вы можете отправить на подпись до 20 документов одновременно';
+$MESS['SIGN_DOCUMENT_SETUP_DOCUMENT_LIMIT_POPUP'] = 'Достигнут лимит по количеству документов';
+$MESS['SIGN_DOCUMENT_SETUP_DOCUMENT_EDIT_BUTTON'] = 'Изменить';
+$MESS['SIGN_DOCUMENT_SETUP_DOCUMENT_CANCEL_BUTTON'] = 'Отмена';
+$MESS['SIGN_DOCUMENT_SETUP_ADD_DOCUMENT_NOTICE'] = 'Можно отправить на подпись сразу несколько документов одновременно. Каждый документ будет подписан отдельно';
+$MESS['SIGN_DOCUMENT_SETUP_ADD_DOCUMENT_HINT'] = 'Вы редактируете сейчас';

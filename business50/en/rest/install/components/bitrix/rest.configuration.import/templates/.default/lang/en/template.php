@@ -1,0 +1,20 @@
+<?php
+$MESS["REST_CONFIGURATION_IMPORT_APP_ERROR_TYPE"] = "This application does not have a settings file";
+$MESS["REST_CONFIGURATION_IMPORT_EASY_DELETE_APP"] = "You don't have any available Bitrix24 presets, which is why we have simply deleted the application.";
+$MESS["REST_CONFIGURATION_IMPORT_ERRORS_MAX_FILE_SIZE"] = "Maximum import file size: #SIZE# MB";
+$MESS["REST_CONFIGURATION_IMPORT_ERRORS_POPUP_BTN_COPY"] = "Copy";
+$MESS["REST_CONFIGURATION_IMPORT_ERRORS_POPUP_TEXT_LABEL"] = "Issue description";
+$MESS["REST_CONFIGURATION_IMPORT_ERRORS_POPUP_TEXT_PLACEHOLDER"] = "Issue description text";
+$MESS["REST_CONFIGURATION_IMPORT_ERRORS_POPUP_TITLE"] = "Error report";
+$MESS["REST_CONFIGURATION_IMPORT_ERRORS_REPORT_BTN"] = "Error report";
+$MESS["REST_CONFIGURATION_IMPORT_FINISH_DESCRIPTION_MSGVER_1"] = "All done! You can now start editing your site.";
+$MESS["REST_CONFIGURATION_IMPORT_FINISH_ERROR_DESCRIPTION"] = "Settings have been imported; however, there were issues.";
+$MESS["REST_CONFIGURATION_IMPORT_INSTALL_APP_TITLE_BLOCK"] = "Application installation";
+$MESS["REST_CONFIGURATION_IMPORT_ROLLBACK_MODE_DESCRIPTION_2_MSGVER_1"] = "To remove the application, select one of the available Bitrix24 configurations, or select a new application in Bitrix24 Market.";
+$MESS["REST_CONFIGURATION_IMPORT_ROLLBACK_MODE_DESCRIPTION_2_MSGVER_2"] = "To remove the application, select one of the available Bitrix24 configurations, or select a new application in Bitrix24 Market.";
+$MESS["REST_CONFIGURATION_IMPORT_ROLLBACK_SUBMIT_BTN"] = "Apply";
+$MESS["REST_CONFIGURATION_IMPORT_ROLLBACK_TITLE_BLOCK"] = "Recover solution preset";
+$MESS["REST_CONFIGURATION_IMPORT_SAVE_FILE_BTN"] = "Upload";
+$MESS["REST_CONFIGURATION_IMPORT_SAVE_FILE_DESCRIPTION_MSGVER_1"] = "Upload a ZIP file you exported from another Bitrix24. #LINK_START#Learn more#LINK_END#";
+$MESS["REST_CONFIGURATION_IMPORT_SAVE_FILE_PROCESS"] = "Uploading file";
+$MESS["REST_CONFIGURATION_IMPORT_TITLE_BLOCK"] = "Import solution preset";

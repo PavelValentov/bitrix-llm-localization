@@ -1,0 +1,5 @@
+<?php
+$MESS["INTRANET_AI_ASSISTANT_ALICE"] = "Yandex Alice";
+$MESS["INTRANET_AI_ASSISTANT_GOOGLE"] = "Google Assistant";
+$MESS["INTRANET_AI_CRM_SCORING"] = "CRM Scoring";
+$MESS["INTRANET_AI_SEGMENT_SCORING"] = "Segment Scoring";

@@ -1,0 +1,26 @@
+<?php
+$MESS["SN_SPACES_CREATE_CHAT"] = "Create a chat";
+$MESS["SN_SPACES_DISCUSSION_AHA_MOMENT_TEXT"] = "Describe the purpose of this space, possible discussion topics and projects.";
+$MESS["SN_SPACES_DISCUSSION_AHA_MOMENT_TITLE"] = "Tell the members about this space";
+$MESS["SN_SPACES_INVITATIONS_CHANGED"] = "Invitations have been updated.";
+$MESS["SN_SPACES_INVITATIONS_REMOVED"] = "Invitations have been canceled.";
+$MESS["SN_SPACES_INVITATIONS_SENT"] = "Invitations have been sent.";
+$MESS["SN_SPACES_MENU_CHAT_CREATE"] = "Create a chat";
+$MESS["SN_SPACES_MENU_CHAT_OPEN"] = "Chat";
+$MESS["SN_SPACES_MENU_CHAT_VIDEO_CALL_HD"] = "Video call";
+$MESS["SN_SPACES_MENU_CREATE_CHAT"] = "Create a chat";
+$MESS["SN_SPACES_MENU_FOLLOW_N"] = "Unfollow";
+$MESS["SN_SPACES_MENU_FOLLOW_Y"] = "Follow";
+$MESS["SN_SPACES_MENU_INFO_MORE_BTN"] = "More";
+$MESS["SN_SPACES_MENU_MEMBERS_GREEN_LABEL"] = "Invited";
+$MESS["SN_SPACES_MENU_MEMBERS_INVITE_BTN"] = "Add";
+$MESS["SN_SPACES_MENU_MEMBERS_LABEL"] = "Members";
+$MESS["SN_SPACES_MENU_MEMBERS_RED_LABEL"] = "Pending approval";
+$MESS["SN_SPACES_MENU_PIN_N"] = "Unpin";
+$MESS["SN_SPACES_MENU_PIN_Y"] = "Pin";
+$MESS["SN_SPACES_MENU_ROLES"] = "Roles and permissions";
+$MESS["SN_SPACES_MENU_SPACE_INVITE_MEMBERS"] = "Add members";
+$MESS["SN_SPACES_MENU_VIDEO_CALL_CHAT"] = "Chat";
+$MESS["SN_SPACES_MENU_VIDEO_CALL_HD"] = "Video call";
+$MESS["SN_SPACES_USER_SELECTOR_SEARCH_TAB_EMPTY_TEXT"] = "Make sure the name you entered is correct.";
+$MESS["SN_SPACES_USER_SELECTOR_SEARCH_TAB_EMPTY_TITLE"] = "Cannot find this chat member";

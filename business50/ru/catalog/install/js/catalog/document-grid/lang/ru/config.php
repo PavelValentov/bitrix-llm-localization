@@ -1,0 +1,12 @@
+<?php
+$MESS['DOCUMENT_GRID_DOCUMENT_DELETE_CONTENT_2'] = 'Удалить этот документ?';
+$MESS['DOCUMENT_GRID_DOCUMENT_CONDUCT_CONTENT_2'] = 'Провести этот документ?';
+$MESS['DOCUMENT_GRID_DOCUMENT_CANCEL_CONTENT_2'] = 'Отменить проведение этого документа?';
+$MESS['DOCUMENT_GRID_DOCUMENT_CANCEL_BUTTON_CONFIRM'] = 'Да, отменить';
+$MESS['DOCUMENT_GRID_DOCUMENT_DELETE_BUTTON_CONFIRM'] = 'Да, удалить';
+$MESS['DOCUMENT_GRID_DOCUMENT_CONDUCT_BUTTON_CONFIRM'] = 'Да, провести';
+$MESS['DOCUMENT_GRID_BUTTON_BACK'] = 'Назад';
+$MESS['DOCUMENT_GRID_DOCUMENT_CANCEL_BATCH_SELECTED_CONTENT'] = 'При отмене будут скорректированы только текущие остатки и себестоимость. #HELP_LINK#';
+$MESS['DOCUMENT_GRID_DOCUMENT_CANCEL_BATCH_SELECTED_CONTENT_LINK'] = 'Подробнее';
+$MESS['DOCUMENT_GRID_CONTINUE'] = 'Продолжить';
+$MESS['DOCUMENT_GRID_CANCEL'] = 'Отменить';

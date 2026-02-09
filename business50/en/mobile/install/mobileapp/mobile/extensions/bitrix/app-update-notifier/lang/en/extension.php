@@ -1,0 +1,14 @@
+<?php
+$MESS["APP_UPDATE_NOTIFIER_CLOSE_V2"] = "Later";
+$MESS["APP_UPDATE_NOTIFIER_FEATHER_LIST_1_V2"] = "Collabs";
+$MESS["APP_UPDATE_NOTIFIER_FEATHER_LIST_2_V2"] = "CoPilot Follow-Up";
+$MESS["APP_UPDATE_NOTIFIER_FEATHER_LIST_3_V2"] = "My documents";
+$MESS["APP_UPDATE_NOTIFIER_FEATHER_LIST_4_V2"] = "Department channels";
+$MESS["APP_UPDATE_NOTIFIER_FEATHER_LIST_5_V2"] = "Forward multiple messages";
+$MESS["APP_UPDATE_NOTIFIER_FEATHER_LIST_6_V2"] = "Customizable bottom navigation";
+$MESS["APP_UPDATE_NOTIFIER_FEATHER_LIST_7_V2"] = "And many more";
+$MESS["APP_UPDATE_NOTIFIER_NEED_UPDATE_V2"] = "Please update the app\nto enable this feature";
+$MESS["APP_UPDATE_NOTIFIER_OPEN"] = "Update now";
+$MESS["APP_UPDATE_NOTIFIER_OPEN_UPDATE_LINK"] = "Update now";
+$MESS["APP_UPDATE_NOTIFIER_TITLE_MAIN_V2"] = "All new Bitrix24";
+$MESS["APP_UPDATE_NOTIFIER_TITLE_PARAGRAPH_V2"] = "Teamwork starts here";

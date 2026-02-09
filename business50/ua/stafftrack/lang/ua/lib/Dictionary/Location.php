@@ -1,0 +1,13 @@
+<?php
+$MESS["STAFFTRACK_LOCATION_CUSTOM"] = "Свій варіант";
+$MESS["STAFFTRACK_LOCATION_CUSTOM_FULL"] = "Свій варіант";
+$MESS["STAFFTRACK_LOCATION_DELETED"] = "Геопозиція більше не доступна";
+$MESS["STAFFTRACK_LOCATION_DELETED_FULL"] = "Геопозиція більше не доступна";
+$MESS["STAFFTRACK_LOCATION_HOME"] = "З дому";
+$MESS["STAFFTRACK_LOCATION_HOME_FULL"] = "Працюю з дому";
+$MESS["STAFFTRACK_LOCATION_OFFICE"] = "В офісі";
+$MESS["STAFFTRACK_LOCATION_OFFICE_FULL"] = "Працюю в офісі";
+$MESS["STAFFTRACK_LOCATION_OUTSIDE"] = "На виїзді";
+$MESS["STAFFTRACK_LOCATION_OUTSIDE_FULL"] = "Працюю на виїзді";
+$MESS["STAFFTRACK_LOCATION_REMOTELY"] = "Віддалено";
+$MESS["STAFFTRACK_LOCATION_REMOTELY_FULL"] = "Працюю віддалено";
