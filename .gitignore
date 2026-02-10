@@ -22,8 +22,8 @@ mlx-server/venv/
 __pycache__/
 
 # Bitrix modules / aggregated data (large, generated)
-input/*
-output/*
+business50/
+input/
 
 # IDE / workspace
 .vscode/

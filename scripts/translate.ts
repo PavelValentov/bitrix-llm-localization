@@ -9,6 +9,20 @@ import cliProgress from 'cli-progress';
 // Type definition for localization.json
 type LocalizationMap = Record<string, Record<string, Record<string, string | null>>>;
 
+const COPY_PRIORITY = ['en', 'ru'];
+
+/**
+ * For long keys we don't send to LLM; copy an existing value into missing slots.
+ * Priority: en first, then ru, then first available.
+ */
+function getCopySourceForLongKey(existingLangs: Record<string, string>): { value: string; sourceLang: string } | null {
+  for (const lang of COPY_PRIORITY) {
+    if (hasValidTranslationValue(existingLangs[lang])) return { value: existingLangs[lang], sourceLang: lang };
+  }
+  const first = Object.entries(existingLangs).find(([, v]) => hasValidTranslationValue(v));
+  return first ? { value: first[1], sourceLang: first[0] } : null;
+}
+
 // Export for testing
 export async function runTranslation(
   inputFile: string, 
@@ -126,6 +140,7 @@ export async function runTranslation(
 
       const keys = localizationData[filePath];
       const itemsToTranslate: Array<{ key: string, fileName: string, context: Record<string, string>, targets: string[] }> = [];
+      let fileHadCopies = false;
 
       // 1. Scan file for missing translations
       for (const [key, langs] of Object.entries(keys)) {
@@ -136,10 +151,22 @@ export async function runTranslation(
         // If no context at all, skip (can't translate from nothing)
         if (Object.keys(existingLangs).length === 0) continue;
 
-        // Skip keys with huge values (>MAX_KEY_LENGTH chars) - too expensive to translate
+        // Long keys: do not send to LLM; copy existing value into missing slots (only when we "refuse" to translate)
         const hasHugeValues = Object.values(existingLangs).some(val => val.length > MAX_KEY_LENGTH);
         if (hasHugeValues) {
-          console.log(`   ⏭️  Skipping huge key: ${key} (>${MAX_KEY_LENGTH} chars)`);
+          const missingTargets = requiredLangs.filter(l => !existingLangs[l]);
+          if (missingTargets.length > 0) {
+            const source = getCopySourceForLongKey(existingLangs);
+            if (source) {
+              for (const lang of missingTargets) {
+                localizationData[filePath][key][lang] = source.value;
+              }
+              fileHadCopies = true;
+              console.log(`   ⏭️  Long key (copy, no LLM): ${key} → ${missingTargets.join(', ')} from ${source.sourceLang}`);
+            } else {
+              console.log(`   ⏭️  Skipping huge key: ${key} (>${MAX_KEY_LENGTH} chars, no source to copy)`);
+            }
+          }
           continue;
         }
 
@@ -154,6 +181,8 @@ export async function runTranslation(
           });
         }
       }
+
+      if (fileHadCopies) await saveResult();
 
       // Skip files that are already complete
       if (itemsToTranslate.length === 0) {

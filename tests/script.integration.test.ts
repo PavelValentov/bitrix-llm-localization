@@ -146,7 +146,7 @@ describe('Translation Script', () => {
     expect(callArgs[0].targets).toEqual(["ua"]);
   });
 
-  it('should treat files with only huge keys (>2048 chars) as complete (pre-scan aligned with main loop)', async () => {
+  it('should copy long keys (no LLM) from en/ru into missing targets when translator refuses', async () => {
     const hugeText = 'x'.repeat(2050);
     const inputData = {
       "huge_only.php": {
@@ -165,18 +165,18 @@ describe('Translation Script', () => {
 
     await runTranslation('dummy.json', ['en']);
 
-    // Only mixed.php has translatable keys (NORMAL_KEY); huge_only.php is skipped entirely
+    // Only NORMAL_KEY sent to translator; long keys get copy substitution
     expect(translatorMocks.translateFileBatch).toHaveBeenCalledTimes(1);
     const callArgs = translatorMocks.translateFileBatch.mock.calls[0][0];
     expect(callArgs).toHaveLength(1);
     expect(callArgs[0].key).toBe("NORMAL_KEY");
-    // HUGE_KEY never sent - skipped; huge_only.php contributes 0 items
     expect(callArgs.some((b: { key: string }) => b.key === "HUGE_KEY")).toBe(false);
 
     const lastCall = fsMocks.writeFile.mock.calls[fsMocks.writeFile.mock.calls.length - 1];
     const savedData = JSON.parse(lastCall[1]);
     expect(savedData["mixed.php"]["NORMAL_KEY"]["en"]).toBe("Text");
-    // HUGE_KEY stays null - we never translate it
-    expect(savedData["mixed.php"]["HUGE_KEY"]["en"]).toBeNull();
+    // Long key: copied from ru into en (no LLM)
+    expect(savedData["mixed.php"]["HUGE_KEY"]["en"]).toBe(hugeText);
+    expect(savedData["huge_only.php"]["HUGE_KEY"]["en"]).toBe(hugeText);
   });
 });
