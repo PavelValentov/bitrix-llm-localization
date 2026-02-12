@@ -110,3 +110,58 @@ export function fillGaps(
 
   return { substitutions };
 }
+
+/**
+ * Fills missing translations if ALL existing translations for a key are identical.
+ * Requires at least 2 identical existing values to be considered "uniform" (safety check),
+ * OR if the value matches a "universal" pattern (punctuation, numbers, etc).
+ */
+export function fillUniformValues(
+  data: TranslationMap,
+  logFn: LogFn
+): { substitutions: number } {
+  let substitutions = 0;
+
+  for (const [filePath, keys] of Object.entries(data)) {
+    for (const [key, langs] of Object.entries(keys)) {
+      const existingValues: string[] = [];
+      const missingLangs: string[] = [];
+
+      for (const [lang, val] of Object.entries(langs)) {
+        if (!isMissing(val)) {
+          existingValues.push(val as string);
+        } else {
+          missingLangs.push(lang);
+        }
+      }
+
+      // If no missing languages, nothing to fill
+      if (missingLangs.length === 0) continue;
+
+      // If no existing values, nothing to copy from
+      if (existingValues.length === 0) continue;
+
+      // Check if all existing values are identical
+      const firstVal = existingValues[0];
+      const allIdentical = existingValues.every((v) => v === firstVal);
+
+      if (!allIdentical) continue;
+
+      // STRICT RULE: Copy only if we have at least 2 identical values.
+      // If we have only 1 value (e.g. en="123", ru="", tr=""), we CANNOT be sure it's universal.
+      // But if en="123" and ru="123", then it's safe to assume tr="123".
+      if (existingValues.length < 2) continue;
+
+      for (const lang of missingLangs) {
+        const entry = data[filePath]?.[key];
+        if (entry) {
+          entry[lang] = firstVal;
+          substitutions++;
+          logFn(`[UNIFORM-FILL] ${filePath} | ${key} | ${lang} | null → "${firstVal}"`);
+        }
+      }
+    }
+  }
+
+  return { substitutions };
+}

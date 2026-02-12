@@ -93,9 +93,9 @@ export const SYSTEM_PROMPT_TOKENS = 200;
 export const RESPONSE_OVERHEAD_PER_ITEM = 30;
 
 /**
- * Hard cap: max items per batch. Prevents context overflow even if estimation is off.
+ * Hard cap: max items per batch. Prevents context overflow and reduces fetch failures (25 = smaller batches).
  */
-export const MAX_BATCH_ITEMS = 50;
+export const MAX_BATCH_ITEMS = 25;
 
 /**
  * Calculate estimated response tokens for a batch of items

@@ -133,14 +133,45 @@ echo "   Required langs: $REQUIRED_LANGS"
 echo ""
 
 # Run translation (don't exit on non-zero — Ctrl+C returns 0 after graceful save)
+# Run tsx directly so TRANSLATE_PID is the Node process (not pnpm); then wait() really waits for sync save on SIGINT.
+# CRITICAL: Use --max-old-space-size=4096 to allow 4GB heap (JSON.stringify of 800k objects needs 500MB-1GB)
 set +e
-pnpm exec tsx scripts/translate.ts "$INPUT_FILE" \
+TSX_BIN="$SCRIPT_DIR/node_modules/.bin/tsx"
+if [ ! -x "$TSX_BIN" ]; then
+  echo "❌ tsx not found. Run: pnpm install"
+  exit 1
+fi
+NODE_OPTIONS="--max-old-space-size=4096" "$TSX_BIN" scripts/translate.ts "$INPUT_FILE" \
   --required="$REQUIRED_LANGS" \
   --output="$OUTPUT_DIR" \
   "$@" &
 TRANSLATE_PID=$!
+
+on_sigint() {
+  if [ -n "$TRANSLATE_PID" ] && kill -0 "$TRANSLATE_PID" 2>/dev/null; then
+    echo ""
+    echo "⏳ Interrupted — sending SIGINT to translation process, waiting for save..."
+    echo "⚠️  DO NOT press Ctrl+C again! The process is saving a 35MB file (20-30 seconds)."
+    echo ""
+    
+    # TRANSLATE_PID is the Node (tsx) process; it will sync-save and exit on SIGINT.
+    kill -INT "$TRANSLATE_PID" 2>/dev/null
+    
+    # Wait for process to exit. If wait is interrupted by another signal, keep waiting.
+    while kill -0 "$TRANSLATE_PID" 2>/dev/null; do
+      wait "$TRANSLATE_PID" 2>/dev/null || true
+      sleep 1
+    done
+    echo "   ✓ Translation process exited cleanly"
+  fi
+  TRANSLATE_PID=""
+  exit 130
+}
+trap on_sigint SIGINT
+
 wait "$TRANSLATE_PID"
 EXIT_CODE=$?
+trap - SIGINT
 TRANSLATE_PID=""
 set -e
 

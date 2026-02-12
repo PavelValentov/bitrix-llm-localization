@@ -225,6 +225,10 @@ export class Translator {
             const msg = `🔄 Model reloaded after ${this.batchCount - 1} batches`;
             this.log(`[RELOAD] ${msg}`);
             console.log(msg);
+            // Give server time to finish reload before next translate request (avoids "fetch failed")
+            const reloadWaitMs = 8000;
+            await new Promise((r) => setTimeout(r, reloadWaitMs));
+            console.log(`   ⏳ Waited ${reloadWaitMs / 1000}s for server to stabilize`);
           }
         } catch (e) {
           this.log(`[RELOAD] Failed: ${e}`);

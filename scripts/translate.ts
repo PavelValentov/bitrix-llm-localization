@@ -1,4 +1,5 @@
 import fs from 'fs/promises';
+import fsSync from 'fs';
 import path from 'path';
 import { Translator } from '../src/translator.js';
 import { config } from '../src/config.js';
@@ -22,6 +23,17 @@ function getCopySourceForLongKey(existingLangs: Record<string, string>): { value
   const first = Object.entries(existingLangs).find(([, v]) => hasValidTranslationValue(v));
   return first ? { value: first[1], sourceLang: first[0] } : null;
 }
+
+// Global error handlers to catch any unhandled errors that might kill the process during save
+process.on('uncaughtException', (err) => {
+  process.stderr.write(`\n❌ UNCAUGHT EXCEPTION: ${err.message}\n${err.stack}\n`);
+  process.exit(1);
+});
+
+process.on('unhandledRejection', (reason) => {
+  process.stderr.write(`\n❌ UNHANDLED REJECTION: ${reason}\n`);
+  process.exit(1);
+});
 
 // Export for testing
 export async function runTranslation(
@@ -47,9 +59,10 @@ export async function runTranslation(
     console.log(`⚙️  Config: max_tokens=${config.maxResponseTokens} (prompt≤${config.maxPromptTokens}), thinking=${config.localServer.enableThinking}, dynamic_batching=enabled`);
   }
 
-  // Graceful shutdown: save progress on Ctrl+C
-  let interrupted = false;
-  let saving = false;
+    // Graceful shutdown: save progress on Ctrl+C
+    let interrupted = false;
+    let interruptTimer: NodeJS.Timeout | null = null;
+    let savePromise: Promise<void> = Promise.resolve();
 
   try {
     const rawData = await fs.readFile(inputFile, 'utf-8');
@@ -60,32 +73,72 @@ export async function runTranslation(
     const filePaths = Object.keys(localizationData);
 
     const saveResult = async () => {
-      saving = true;
-      const outputFile = path.join(outputDir, inputFile);
-      await fs.mkdir(path.dirname(outputFile), { recursive: true });
-      await fs.writeFile(outputFile, JSON.stringify(localizationData, null, 2));
-      saving = false;
+      const previous = savePromise;
+      savePromise = (async () => {
+        await previous;
+        const outputFile = path.join(outputDir, inputFile);
+        await fs.mkdir(path.dirname(outputFile), { recursive: true });
+        await fs.writeFile(outputFile, JSON.stringify(localizationData, null, 2));
+        try {
+          const fd = await fs.open(outputFile, 'r');
+          try {
+            await fd.sync();
+          } finally {
+            await fd.close();
+          }
+        } catch {
+          // Ignore fsync errors (e.g. in tests or when FS does not support sync)
+        }
+      })();
+      await savePromise;
     };
 
-    // SIGINT handler: save current progress before exit
-    const onInterrupt = async () => {
-      if (interrupted) return; // prevent double-handling
+    // SIGINT handler: Double Ctrl+C to exit. First Ctrl+C warns, second Ctrl+C (within 3s) saves and exits.
+    const onInterrupt = () => {
+      const log = (msg: string) => {
+        process.stdout.write(msg + '\n');
+      };
+      
+      // First Ctrl+C: warn and set timer. Do NOT set interrupted flag yet (let translation continue).
+      if (!interrupted && !interruptTimer) {
+        log('\n\n⚠️  Ctrl+C pressed! Press Ctrl+C AGAIN within 3 seconds to save and exit.');
+        log('   Or wait — translation will continue automatically.\n');
+        
+        // Timer: if no second Ctrl+C within 3s, just show "continuing" message
+        interruptTimer = setTimeout(() => {
+          interruptTimer = null;
+          log('   ✓ No second Ctrl+C — continuing translation.\n');
+        }, 3000);
+        
+        return;
+      }
+      
+      // Second Ctrl+C within 3s: NOW set interrupted flag and save immediately
+      if (interruptTimer) {
+        clearTimeout(interruptTimer);
+        interruptTimer = null;
+      }
+      
+      if (interrupted) {
+        // Already interrupted and saving - ignore further signals
+        return;
+      }
+      
       interrupted = true;
       bar.stop();
-      console.log('\n\n⏸️  Interrupted! Saving progress...');
-      try {
-        await saveResult();
-        const outputFile = path.join(outputDir, inputFile);
-        console.log(`💾 Progress saved to ${outputFile}`);
-        console.log(`   Processed ${processedCount}/${filePaths.length} files, translated ${translatedFiles} files.`);
-        console.log(`   Run the same command to resume.`);
-      } catch (e) {
-        console.error('❌ Failed to save progress:', e);
-      }
-      process.exit(0);
+      log('\n\n⏸️  Second Ctrl+C! Will exit after saving current progress...');
+      log('   (File is autosaved every 10 translations, so exit is fast)\n');
+      // Just set flag - main loop will break, do final async save, and exit cleanly
     };
+
+    // Remove any existing listeners (e.g. from dotenv) to ensure our handler runs exclusively
+    process.removeAllListeners('SIGINT');
+    process.removeAllListeners('SIGTERM');
+    process.removeAllListeners('SIGHUP');
+
     process.on('SIGINT', onInterrupt);
     process.on('SIGTERM', onInterrupt);
+    process.on('SIGHUP', onInterrupt);
 
     // Pre-scan: count files that need translation vs already complete
     // MUST match main loop logic: skip huge keys (>2048 chars) - we never translate them
@@ -133,7 +186,7 @@ export async function runTranslation(
 
     let processedCount = alreadyDone;
     let translatedFiles = 0;
-    const SAVE_INTERVAL = 1; // Save every 1 file with translations
+    let failedBatches = 0;
 
     for (const filePath of filePaths) {
       if (interrupted) break;
@@ -208,45 +261,79 @@ export async function runTranslation(
           `\n📤 Batch ${batchIdx + 1}/${totalBatches} [${filePath}]: ${batch.length} keys (${keysPreview}${keysMore})`
         );
 
-        try {
-          const results = await translator.translateFileBatch(batch);
-          
-          // Apply results
-          for (const [key, translations] of Object.entries(results)) {
-            if (localizationData[filePath] && localizationData[filePath][key]) {
-              for (const [lang, text] of Object.entries(translations)) {
-                localizationData[filePath][key][lang] = text;
+        const maxRetries = 3;
+        const retryDelaysMs = [0, 5000, 15000];
+        let batchOk = false;
+        for (let attempt = 0; attempt < maxRetries && !batchOk; attempt++) {
+          try {
+            if (attempt > 0) {
+              console.log(`   🔄 Retry ${attempt}/${maxRetries - 1} in ${retryDelaysMs[attempt] / 1000}s...`);
+              await new Promise((r) => setTimeout(r, retryDelaysMs[attempt]));
+            }
+            const results = await translator.translateFileBatch(batch);
+
+            // Apply only valid translations (skip empty/invalid so we retry next run instead of looping)
+            for (const [key, translations] of Object.entries(results)) {
+              if (localizationData[filePath] && localizationData[filePath][key]) {
+                for (const [lang, text] of Object.entries(translations)) {
+                  if (hasValidTranslationValue(text)) {
+                    localizationData[filePath][key][lang] = text;
+                  }
+                  // else leave null so next run retries instead of writing "" and looping
+                }
               }
             }
+            const langs = [...new Set(Object.values(results).flatMap((r) => Object.keys(r)))];
+            console.log(`   📥 OK: ${Object.keys(results).length} keys → ${langs.join(", ")}`);
+            await saveResult();
+            batchOk = true;
+          } catch (err) {
+            if (attempt === maxRetries - 1) {
+              failedBatches++;
+              console.error(`\n❌ Error processing file ${filePath}:`, err instanceof Error ? err.message : String(err));
+            } else {
+              console.warn(`   ⚠️ Attempt ${attempt + 1} failed: ${err instanceof Error ? err.message : String(err)}`);
+            }
           }
-          const langs = [...new Set(Object.values(results).flatMap((r) => Object.keys(r)))];
-          console.log(`   📥 OK: ${Object.keys(results).length} keys → ${langs.join(", ")}`);
-        } catch (err) {
-          console.error(`\n❌ Error processing file ${filePath}:`, err instanceof Error ? err.message : String(err));
         }
       }
 
       processedCount++;
       translatedFiles++;
       bar.update(processedCount, { translated: alreadyDone + translatedFiles });
-
-      if (translatedFiles % SAVE_INTERVAL === 0) {
+      
+      // Autosave every 10 files so Ctrl+C doesn't need to do heavy save
+      if (translatedFiles % 10 === 0) {
         await saveResult();
       }
     }
     
-    if (!interrupted) {
-      bar.stop();
-      // Final save
-      await saveResult();
-      const outputFile = path.join(outputDir, inputFile);
-      console.log(`\n💾 Saved updated translations to ${outputFile}`);
-      console.log(`   Total: ${filePaths.length} files, translated ${translatedFiles} this run.`);
+    // Always do final save (async - fast because we autosave every 10 files)
+    bar.stop();
+    if (interrupted) {
+      console.log('\n💾 Interrupted - doing final save...');
+    } else {
+      console.log('\n💾 Final save...');
+    }
+    await saveResult();
+    const outputFile = path.join(outputDir, inputFile);
+    console.log(`   Saved to ${outputFile}`);
+    console.log(`   Total: ${filePaths.length} files, translated ${translatedFiles} this run.`);
+    if (failedBatches > 0) {
+      console.log(`   ⚠️  ${failedBatches} batch(es) failed (fetch/timeout) — those keys were not applied. Run again to retry.`);
+    }
+    
+    if (interrupted) {
+      console.log('\n⏸️  Translation interrupted. Run the same command to resume.');
     }
 
-    // Cleanup signal handlers
+    // Cleanup signal handlers and timer
+    if (interruptTimer) {
+      clearTimeout(interruptTimer);
+    }
     process.removeListener('SIGINT', onInterrupt);
     process.removeListener('SIGTERM', onInterrupt);
+    process.removeListener('SIGHUP', onInterrupt);
 
   } catch (error) {
     console.error('Fatal error:', error);
