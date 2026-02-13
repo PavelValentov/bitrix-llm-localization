@@ -187,6 +187,8 @@ export async function runTranslation(
     let processedCount = alreadyDone;
     let translatedFiles = 0;
     let failedBatches = 0;
+    let totalApplied = 0;
+    let totalSkipped = 0;
 
     for (const filePath of filePaths) {
       if (interrupted) break;
@@ -273,18 +275,30 @@ export async function runTranslation(
             const results = await translator.translateFileBatch(batch);
 
             // Apply only valid translations (skip empty/invalid so we retry next run instead of looping)
+            let appliedCount = 0;
+            let skippedCount = 0;
+            const appliedLangs = new Set<string>();
             for (const [key, translations] of Object.entries(results)) {
               if (localizationData[filePath] && localizationData[filePath][key]) {
                 for (const [lang, text] of Object.entries(translations)) {
                   if (hasValidTranslationValue(text)) {
                     localizationData[filePath][key][lang] = text;
+                    appliedCount++;
+                    appliedLangs.add(lang);
+                  } else {
+                    skippedCount++;
+                    console.warn(`   ⚠️  Skipped invalid value for ${key}/${lang}: ${JSON.stringify(text)}`);
                   }
-                  // else leave null so next run retries instead of writing "" and looping
                 }
+              } else {
+                // Key from LLM not found in data — should not happen after key-remap fix
+                skippedCount += Object.keys(translations).length;
+                console.warn(`   ⚠️  Key not found in data: "${key}" (LLM returned unknown key)`);
               }
             }
-            const langs = [...new Set(Object.values(results).flatMap((r) => Object.keys(r)))];
-            console.log(`   📥 OK: ${Object.keys(results).length} keys → ${langs.join(", ")}`);
+            totalApplied += appliedCount;
+            totalSkipped += skippedCount;
+            console.log(`   📥 Applied: ${appliedCount} translations → ${[...appliedLangs].join(", ")}${skippedCount > 0 ? ` (${skippedCount} skipped)` : ''}`);
             await saveResult();
             batchOk = true;
           } catch (err) {
@@ -319,6 +333,7 @@ export async function runTranslation(
     const outputFile = path.join(outputDir, inputFile);
     console.log(`   Saved to ${outputFile}`);
     console.log(`   Total: ${filePaths.length} files, translated ${translatedFiles} this run.`);
+    console.log(`   Applied: ${totalApplied} translations${totalSkipped > 0 ? `, skipped: ${totalSkipped} (invalid/empty)` : ''}`);
     if (failedBatches > 0) {
       console.log(`   ⚠️  ${failedBatches} batch(es) failed (fetch/timeout) — those keys were not applied. Run again to retry.`);
     }

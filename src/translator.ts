@@ -76,6 +76,7 @@ export class Translator {
     }
 
     const userPrompt = JSON.stringify(items, null, 2);
+    const originalKeys = items.map(i => i.key);
 
     this.log('\n--- [LLM REQUEST] ---');
     this.log(new Date().toISOString());
@@ -88,11 +89,11 @@ export class Translator {
 
     try {
       const raw = await this.callLlm(userPrompt);
-      return this.postProcess(raw);
+      return this.postProcess(raw, originalKeys);
     } catch (error) {
       console.warn(`Translation failed, retrying once... Error: ${error}`);
       const raw = await this.callLlm(userPrompt);
-      return this.postProcess(raw);
+      return this.postProcess(raw, originalKeys);
     }
   }
 
@@ -117,7 +118,7 @@ export class Translator {
 
         try {
           const raw = await this.callLlm(userPrompt);
-          const processed = this.postProcess(raw);
+          const processed = this.postProcess(raw, [item.key]);
           if (processed[item.key] && processed[item.key][lang]) {
             result[item.key][lang] = processed[item.key][lang];
             console.log(`   ✓ ${lang}: ${processed[item.key][lang].length} chars`);
@@ -132,18 +133,45 @@ export class Translator {
     return result;
   }
 
-  private postProcess(raw: Record<string, Record<string, string>>): Record<string, Record<string, string>> {
+  /**
+   * Post-process LLM results: clean translations, validate, and remap keys.
+   * Uses originalKeys to fix LLM key hallucinations (e.g. LLM renames ACCOMPLICES → ACCOMPLISHERS).
+   * Strategy: match by position first (same order as request), fall back to exact key match.
+   */
+  private postProcess(raw: Record<string, Record<string, string>>, originalKeys?: string[]): Record<string, Record<string, string>> {
     const result: Record<string, Record<string, string>> = {};
-    for (const [key, translations] of Object.entries(raw)) {
-      result[key] = {};
+    const rawEntries = Object.entries(raw);
+
+    for (let i = 0; i < rawEntries.length; i++) {
+      const [llmKey, translations] = rawEntries[i];
+
+      // Determine the correct key: prefer original key at same position
+      let resolvedKey = llmKey;
+      if (originalKeys && i < originalKeys.length) {
+        const originalKey = originalKeys[i];
+        if (llmKey !== originalKey) {
+          this.log(`[KEY-REMAP] LLM returned "${llmKey}" but original was "${originalKey}" — using original`);
+          console.warn(`   ⚠️  Key remap: LLM "${llmKey}" → original "${originalKey}"`);
+          resolvedKey = originalKey;
+        }
+      } else if (originalKeys) {
+        // Extra items beyond originalKeys — try exact match or keep LLM key
+        const exactMatch = originalKeys.find(k => k === llmKey);
+        if (!exactMatch) {
+          this.log(`[KEY-WARN] LLM returned extra key "${llmKey}" not in original request — keeping as-is`);
+        }
+      }
+
+      result[resolvedKey] = {};
       for (const [lang, text] of Object.entries(translations)) {
         const cleaned = cleanTranslation(text) ?? text;
         if (!validateTranslation(cleaned, lang)) {
-          this.log(`[VALIDATE] Rejected ${key}/${lang}: ${cleaned}`);
+          this.log(`[VALIDATE] Rejected ${resolvedKey}/${lang}: ${cleaned}`);
         }
-        result[key][lang] = cleaned;
+        result[resolvedKey][lang] = cleaned;
       }
     }
+
     return result;
   }
 
