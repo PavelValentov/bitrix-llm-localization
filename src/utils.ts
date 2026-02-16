@@ -33,7 +33,7 @@ export function extractMessages(content: string): Map<string, string> {
         if (quoteType === "'") {
             value = value.replace(/\\'/g, "'").replace(/\\\\/g, "\\");
         } else {
-            value = value.replace(/\\"/g, '"').replace(/\\\\/g, "\\");
+            value = value.replace(/\\\\/g, "\\").replace(/\\"/g, '"').replace(/\\$/g, "$");
         }
         
         messages.set(key, value);

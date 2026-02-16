@@ -12,6 +12,8 @@
     "fill-gaps": "tsx scripts/fill-gaps.ts",
     "merge-aggregate": "tsx scripts/merge-aggregate.ts",
     "create-archives": "tsx scripts/create_archives.ts",
+    "verify-php-before-archives": "tsx scripts/verify_php_before_archives.ts",
+    "check-php-syntax": "tsx scripts/check_php_syntax.ts",
     "mlx-server": "python mlx-server/mlx_server.py -m ~/.lmstudio/models/lmstudio-community/Qwen3-8B-MLX-8bit -p 8765"
   },
   "keywords": [],

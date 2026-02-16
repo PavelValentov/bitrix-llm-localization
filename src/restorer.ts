@@ -49,14 +49,18 @@ export async function restore(data: TranslationMap, targetDir: string): Promise<
             const relativePath = normalizedPath.replace(/\{lang\}/g, lang);
             const fullPath = path.join(targetDir, lang, relativePath);
 
-            let phpContent = `<?\n`;
+            let phpContent = `<?php\n`;
             let hasContent = false;
 
             for (const msgKey of messageKeys) {
                 const value = fileTranslations[msgKey][lang];
                 
                 if (value !== null && value !== undefined) {
-                    const safeValue = value.replace(/\\/g, '\\\\').replace(/'/g, "\\'");
+                    // PHP double-quoted string: escape \, $, " (any language may contain $ or " in text/code examples)
+                    const safeValue = value
+                        .replace(/\\/g, '\\\\')
+                        .replace(/\$/g, '\\$')
+                        .replace(/"/g, '\\"');
                     phpContent += `$MESS["${msgKey}"] = "${safeValue}";\n`;
                     hasContent = true;
                 }

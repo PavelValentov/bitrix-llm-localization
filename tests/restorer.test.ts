@@ -61,7 +61,7 @@ describe('restorer', () => {
         // Should create file for ru, but empty content
         expect(fs.writeFileSync).toHaveBeenCalledWith(
             path.join(targetDir, 'ru', 'module/lang/ru/file.php'),
-            expect.stringContaining(`<?\n?>`)
+            expect.stringContaining(`<?php\n?>`)
         );
         
         // Ensure KEY is NOT written for RU
@@ -69,5 +69,60 @@ describe('restorer', () => {
             path.join(targetDir, 'ru', 'module/lang/ru/file.php'),
             expect.stringContaining(`$MESS["KEY"]`)
         );
+    });
+
+    it('should use <?php (not short tag <? ) for PHP 8 compatibility', async () => {
+        const targetDir = '/app/out';
+        const data = { 'lang/{lang}/file.php': { 'K': { 'tr': 'Değer' } } };
+        vi.spyOn(fs, 'existsSync').mockReturnValue(false);
+        vi.spyOn(fs, 'mkdirSync').mockImplementation(() => undefined);
+        vi.spyOn(fs, 'writeFileSync').mockImplementation(() => undefined);
+
+        await restore(data, targetDir);
+
+        const written = (fs.writeFileSync as ReturnType<typeof vi.fn>).mock.calls[0][1];
+        expect(written.startsWith('<?php\n')).toBe(true);
+        expect(written).not.toMatch(/^<\?\n/);
+    });
+
+    it('should escape double quotes in values to avoid ParseError', async () => {
+        const targetDir = '/app/out';
+        const data = {
+            'module/lang/{lang}/filter_tools.php': {
+                FILTER_ERROR_LOGIC: {
+                    tr: 'Use "VEYA" or "VE" in the filter.',
+                },
+            },
+        };
+        vi.spyOn(fs, 'existsSync').mockReturnValue(false);
+        vi.spyOn(fs, 'mkdirSync').mockImplementation(() => undefined);
+        vi.spyOn(fs, 'writeFileSync').mockImplementation(() => undefined);
+
+        await restore(data, targetDir);
+
+        const written = (fs.writeFileSync as ReturnType<typeof vi.fn>).mock.calls[0][1];
+        expect(written).toContain('\\"VEYA\\"');
+        expect(written).toContain('\\"VE\\"');
+        // Value must not contain unescaped " that would close the PHP string early
+        expect(written).toContain('$MESS["FILTER_ERROR_LOGIC"] = "Use \\"VEYA\\" or \\"VE\\" in the filter.";');
+    });
+
+    it('should escape $ in values so PHP does not interpolate variables', async () => {
+        const targetDir = '/app/out';
+        const data = {
+            'main/lang/{lang}/step1.php': {
+                KEY: {
+                    en: "Use \\$_SERVER['DOCUMENT_ROOT'] in path.",
+                },
+            },
+        };
+        vi.spyOn(fs, 'existsSync').mockReturnValue(false);
+        vi.spyOn(fs, 'mkdirSync').mockImplementation(() => undefined);
+        vi.spyOn(fs, 'writeFileSync').mockImplementation(() => undefined);
+
+        await restore(data, targetDir);
+
+        const written = (fs.writeFileSync as ReturnType<typeof vi.fn>).mock.calls[0][1];
+        expect(written).toContain('\\$_SERVER');
     });
 });

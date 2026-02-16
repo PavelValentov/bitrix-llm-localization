@@ -1,7 +1,10 @@
 import * as fs from 'fs';
 import * as path from 'path';
-import { exec } from 'child_process';
+import { fileURLToPath } from 'url';
+import { exec, spawnSync } from 'child_process';
 import { promisify } from 'util';
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 const execAsync = promisify(exec);
 
@@ -74,7 +77,20 @@ async function createArchives(targetDir: string) {
 }
 
 // Entry point
-const args = process.argv.slice(2);
+const args = process.argv.slice(2).filter((a) => !a.startsWith('--'));
+const skipVerify = process.argv.includes('--skip-verify');
 const targetDir = args[0] ? path.resolve(args[0]) : path.resolve('./business100');
 
-createArchives(targetDir);
+(async () => {
+    if (!skipVerify) {
+        const verifyScript = path.join(__dirname, 'verify_php_before_archives.ts');
+        const result = spawnSync('npx', ['tsx', verifyScript, targetDir], {
+            stdio: 'inherit',
+        });
+        if (result.status !== 0) {
+            console.error('Run with --skip-verify to archive without verification.');
+            process.exit(result.status ?? 1);
+        }
+    }
+    await createArchives(targetDir);
+})();
