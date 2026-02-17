@@ -42,7 +42,9 @@ function isMissing(val: string | null | undefined): boolean {
 }
 
 /**
- * Builds an index: source text -> list of donor entries (keys that have translations).
+ * Builds an index: normalized text -> list of donor entries (keys that have translations).
+ * Each donor is indexed under every non-empty language value so that keys with only e.g. ru
+ * can find donors that have the same text in ru plus en/tr/ua (and copy the missing langs).
  */
 export function buildSourceTextIndex(
   data: TranslationMap,
@@ -52,9 +54,6 @@ export function buildSourceTextIndex(
 
   for (const [filePath, keys] of Object.entries(data)) {
     for (const [key, langs] of Object.entries(keys)) {
-      const sourceText = getSourceText(langs, sourceLang);
-      if (!sourceText) continue;
-
       const translations: Record<string, string> = {};
       for (const [lang, val] of Object.entries(langs)) {
         if (!isMissing(val)) translations[lang] = val as string;
@@ -62,9 +61,16 @@ export function buildSourceTextIndex(
       if (Object.keys(translations).length === 0) continue;
 
       const entry: DonorEntry = { filePath, key, translations };
-      const list = index.get(sourceText) ?? [];
-      list.push(entry);
-      index.set(sourceText, list);
+      const seenTexts = new Set<string>();
+      for (const val of Object.values(translations)) {
+        const normalized = normalizeSourceText(val);
+        if (normalized && !seenTexts.has(normalized)) {
+          seenTexts.add(normalized);
+          const list = index.get(normalized) ?? [];
+          list.push(entry);
+          index.set(normalized, list);
+        }
+      }
     }
   }
 

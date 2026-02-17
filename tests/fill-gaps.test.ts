@@ -25,7 +25,7 @@ describe('normalizeSourceText', () => {
 });
 
 describe('buildSourceTextIndex', () => {
-  it('groups keys by source text (en)', () => {
+  it('groups keys by source text (en) and indexes by every language for cross-lang match', () => {
     const data: TranslationMap = {
       'file1.php': {
         KEY_A: { en: 'Delete', ru: 'Удалить', tr: 'Sil', ua: 'Видалити' },
@@ -33,7 +33,8 @@ describe('buildSourceTextIndex', () => {
       },
     };
     const index = buildSourceTextIndex(data);
-    expect(index.size).toBe(1);
+    // Index has one entry per unique normalized text (Delete, Удалить, Sil, Видалити)
+    expect(index.size).toBe(4);
     const donors = index.get('Delete')!;
     expect(donors).toHaveLength(2);
     expect(donors[0].filePath).toBe('file1.php');
@@ -110,6 +111,37 @@ describe('fillGaps', () => {
       ru: 'Старт',
       tr: 'Başlat',
       ua: 'Почати',
+    });
+  });
+
+  it('fills recipient that has only ru by matching donor via same ru text (index by all langs)', () => {
+    const data: TranslationMap = {
+      'socialnetwork/.../short/lang/{lang}/template.php': {
+        DONOR: {
+          en: 'You do not have permission to view the profile of this user.',
+          ru: 'У вас нет прав на просмотр профайла этого пользователя.',
+          tr: 'Bu kullanıcının profiline bakma izniniz yok.',
+          ua: 'У вас немає прав на перегляд профайла цього користувача.',
+        },
+      },
+      'intranet/.../short/lang/{lang}/template.php': {
+        RECIPIENT: {
+          en: null,
+          ru: 'У вас нет прав на просмотр профайла этого пользователя.',
+          tr: null,
+          ua: null,
+        },
+      },
+    };
+    const index = buildSourceTextIndex(data);
+    const { substitutions } = fillGaps(data, index, () => {});
+
+    expect(substitutions).toBe(3);
+    expect(data['intranet/.../short/lang/{lang}/template.php']!['RECIPIENT']).toEqual({
+      en: 'You do not have permission to view the profile of this user.',
+      ru: 'У вас нет прав на просмотр профайла этого пользователя.',
+      tr: 'Bu kullanıcının profiline bakma izniniz yok.',
+      ua: 'У вас немає прав на перегляд профайла цього користувача.',
     });
   });
 
