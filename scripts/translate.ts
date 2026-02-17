@@ -76,6 +76,7 @@ export async function runTranslation(
     const localizationData: LocalizationMap = JSON.parse(rawData);
 
     // Normalize keys that are all null or only whitespace → all " "
+    // mapForFill is the same object as localizationData (type cast only); fill-gaps mutations affect the main loop.
     const mapForFill = localizationData as import('../src/utils.js').TranslationMap;
     fillAllNullOrWhitespaceOnlyKeys(mapForFill, () => {});
 
@@ -94,6 +95,11 @@ export async function runTranslation(
         const normRes = fillAllNullOrWhitespaceOnlyKeys(mapForFill, logFn);
         substitutions += normRes.substitutions;
         console.log(`   📋 Fill-gaps: ${substitutions} substitutions (log: ${logFile})`);
+        // mapForFill is the same object as localizationData — mutations are visible to the main loop.
+        // Remaining files will see filled slots and will have fewer keys to translate.
+        if (substitutions > 0) {
+          console.log(`   ✓ In-memory data updated; remaining batches will skip already-filled slots.`);
+        }
         await saveResult();
       },
     });
