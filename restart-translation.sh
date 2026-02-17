@@ -17,13 +17,13 @@ sleep 2
 # 2. Verify configuration
 echo ""
 echo "2️⃣  Verifying configuration..."
-node test-config.mjs | grep -E "(Batch Size|Enable Thinking|Max Response)" || {
+node tests/scripts/test-config.mjs | grep -E "(Batch Size|Enable Thinking|Max Response)" || {
     echo "❌ Configuration check failed!"
     exit 1
 }
 
 # 3. Check if thinking mode is disabled
-THINKING_STATUS=$(node test-config.mjs | grep "Enable Thinking" | grep -o "false\|true")
+THINKING_STATUS=$(node tests/scripts/test-config.mjs | grep "Enable Thinking" | grep -o "false\|true")
 if [ "$THINKING_STATUS" = "true" ]; then
     echo ""
     echo "❌ ERROR: Thinking mode is ENABLED!"

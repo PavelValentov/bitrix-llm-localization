@@ -1,6 +1,6 @@
 import * as fs from 'fs';
 import * as path from 'path';
-import { buildSourceTextIndex, fillGaps, fillUniformValues } from '../src/fill-gaps.js';
+import { buildSourceTextIndex, fillAllNullOrWhitespaceOnlyKeys, fillGaps, fillUniformValues } from '../src/fill-gaps.js';
 import type { TranslationMap } from '../src/utils.js';
 
 const USAGE = `
@@ -48,10 +48,15 @@ const targetDir = path.resolve(args[1]);
 
     logFn(`[FILL-GAPS] ${new Date().toISOString()} | Started`);
 
-    const index = buildSourceTextIndex(data, 'en');
-    let { substitutions } = fillGaps(data, index, logFn);
+    // Pass 0: normalize keys that are all null or only whitespace → all " "
+    const normalizeRes = fillAllNullOrWhitespaceOnlyKeys(data, logFn);
+    let substitutions = normalizeRes.substitutions;
+    logFn(`[NORMALIZE-EMPTY] Keys with no real content set to " ". Substitutions: ${normalizeRes.substitutions}`);
 
-    logFn(`[FILL-GAPS] First pass (copy from source) complete. Substitutions: ${substitutions}`);
+    const index = buildSourceTextIndex(data, 'en');
+    const gapRes = fillGaps(data, index, logFn);
+    substitutions += gapRes.substitutions;
+    logFn(`[FILL-GAPS] First pass (copy from source) complete. Substitutions: ${gapRes.substitutions}`);
 
     // Second pass: fill uniform values (e.g. "?", "!", numbers, or identical translations)
     const uniformRes = fillUniformValues(data, logFn);

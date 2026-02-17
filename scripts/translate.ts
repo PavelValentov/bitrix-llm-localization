@@ -3,6 +3,7 @@ import fsSync from 'fs';
 import path from 'path';
 import { Translator } from '../src/translator.js';
 import { config } from '../src/config.js';
+import { buildSourceTextIndex, fillAllNullOrWhitespaceOnlyKeys, fillGaps, fillUniformValues } from '../src/fill-gaps.js';
 import { buildDynamicBatches } from '../src/token-estimator.js';
 import { hasValidTranslationValue } from '../src/translation-utils.js';
 import cliProgress from 'cli-progress';
@@ -11,6 +12,12 @@ import cliProgress from 'cli-progress';
 type LocalizationMap = Record<string, Record<string, Record<string, string | null>>>;
 
 const COPY_PRIORITY = ['en', 'ru'];
+
+/** Empty, null, or whitespace-only — slot can be filled (per §4.6 / DEV-0021). Do not overwrite non-whitespace. */
+function isSlotFillable(val: string | null | undefined): boolean {
+  if (val == null || val === '') return true;
+  return val.length > 0 && val.trim().length === 0;
+}
 
 /**
  * For long keys we don't send to LLM; copy an existing value into missing slots.
@@ -67,8 +74,29 @@ export async function runTranslation(
   try {
     const rawData = await fs.readFile(inputFile, 'utf-8');
     const localizationData: LocalizationMap = JSON.parse(rawData);
-    
-    const translator = new Translator();
+
+    // Normalize keys that are all null or only whitespace → all " "
+    const mapForFill = localizationData as import('../src/utils.js').TranslationMap;
+    fillAllNullOrWhitespaceOnlyKeys(mapForFill, () => {});
+
+    const translator = new Translator({
+      onAfterReload: async () => {
+        console.log('   📋 Running fill-gaps after model reload...');
+        const logDir = 'logs';
+        if (!fsSync.existsSync(logDir)) fsSync.mkdirSync(logDir, { recursive: true });
+        const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+        const logFile = path.join(logDir, `translation-fill-gaps-${timestamp}.log`);
+        const logFn = (msg: string) => { fsSync.appendFileSync(logFile, msg + '\n'); };
+        const index = buildSourceTextIndex(mapForFill, 'en');
+        let substitutions = fillGaps(mapForFill, index, logFn).substitutions;
+        const uniformRes = fillUniformValues(mapForFill, logFn);
+        substitutions += uniformRes.substitutions;
+        const normRes = fillAllNullOrWhitespaceOnlyKeys(mapForFill, logFn);
+        substitutions += normRes.substitutions;
+        console.log(`   📋 Fill-gaps: ${substitutions} substitutions (log: ${logFile})`);
+        await saveResult();
+      },
+    });
     
     const filePaths = Object.keys(localizationData);
 
@@ -281,14 +309,19 @@ export async function runTranslation(
             for (const [key, translations] of Object.entries(results)) {
               if (localizationData[filePath] && localizationData[filePath][key]) {
                 for (const [lang, text] of Object.entries(translations)) {
-                  if (hasValidTranslationValue(text)) {
-                    localizationData[filePath][key][lang] = text;
-                    appliedCount++;
-                    appliedLangs.add(lang);
-                  } else {
+                  if (!hasValidTranslationValue(text)) {
                     skippedCount++;
                     console.warn(`   ⚠️  Skipped invalid value for ${key}/${lang}: ${JSON.stringify(text)}`);
+                    continue;
                   }
+                  const current = localizationData[filePath][key][lang];
+                  if (!isSlotFillable(current)) {
+                    skippedCount++;
+                    continue;
+                  }
+                  localizationData[filePath][key][lang] = text;
+                  appliedCount++;
+                  appliedLangs.add(lang);
                 }
               } else {
                 // Key from LLM not found in data — should not happen after key-remap fix
@@ -358,18 +391,38 @@ export async function runTranslation(
 
 // Only run if called directly
 import { fileURLToPath } from 'url';
+
+const TRANSLATE_USAGE = `
+Usage: pnpm translate <input-file> [--required=en,ua] [--output=output]
+
+  input-file       Path to localization.json (required)
+  --required=langs Comma-separated language codes to fill (default: en,ua)
+  --output=dir     Output directory; result written to <output>/<input-file> (default: output)
+
+Examples:
+  pnpm translate output/business50/localization.json --required=en,ru,ua,tr
+  pnpm translate output/business50/localization.json --output=.
+
+Tip: Fill missing slots from existing translations before or alongside translate:
+  pnpm fill-gaps <input-file> <output-dir>   (writes result to output-dir)
+  With local-server backend, fill-gaps also runs automatically after each model reload.
+`;
+
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
   const args = process.argv.slice(2);
+  if (args.includes('--help') || args.includes('-h')) {
+    console.log(TRANSLATE_USAGE.trim());
+    process.exit(0);
+  }
   const requiredLangsStr = args.find(a => a.startsWith('--required='))?.split('=')[1] || 'en,ua';
   const requiredLangs = requiredLangsStr.split(',');
   const outputDir = args.find(a => a.startsWith('--output='))?.split('=')[1] || 'output';
-  
-  const inputFile = args.find(a => !a.startsWith('--')) || 'localization.json';
-  
+  const inputFile = args.find(a => !a.startsWith('--'));
+
   if (!inputFile) {
-    console.error('Usage: pnpm translate <input-file> [--required=en,ua] [--output=output]');
+    console.log(TRANSLATE_USAGE.trim());
     process.exit(1);
   }
-  
+
   runTranslation(inputFile, requiredLangs, outputDir);
 }

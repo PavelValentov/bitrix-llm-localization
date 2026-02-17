@@ -112,6 +112,47 @@ export function fillGaps(
 }
 
 /**
+ * True if value has no real content (null, empty, or whitespace-only).
+ */
+function isEmptyOrWhitespaceOnly(val: string | null | undefined): boolean {
+  if (val == null) return true;
+  return String(val).trim() === '';
+}
+
+/**
+ * For each key where ALL values are null/empty or whitespace-only (no real translation):
+ * set every language slot to " " (one space).
+ * Covers: (1) all null, (2) one " " and rest null — normalize to all " ".
+ * Mutates `data` in place.
+ */
+export function fillAllNullOrWhitespaceOnlyKeys(
+  data: TranslationMap,
+  logFn: LogFn
+): { substitutions: number } {
+  let substitutions = 0;
+
+  for (const [filePath, keys] of Object.entries(data)) {
+    for (const [key, langs] of Object.entries(keys)) {
+      const hasRealValue = Object.values(langs).some((v) => !isEmptyOrWhitespaceOnly(v));
+      if (hasRealValue) continue;
+
+      const entry = data[filePath]?.[key];
+      if (!entry) continue;
+
+      for (const lang of Object.keys(entry)) {
+        const current = entry[lang];
+        if (current === ' ') continue;
+        entry[lang] = ' ';
+        substitutions++;
+        logFn(`[NORMALIZE-EMPTY] ${filePath} | ${key} | ${lang} | ${JSON.stringify(current)} → " "`);
+      }
+    }
+  }
+
+  return { substitutions };
+}
+
+/**
  * Fills missing translations if ALL existing translations for a key are identical.
  * Requires at least 2 identical existing values to be considered "uniform" (safety check),
  * OR if the value matches a "universal" pattern (punctuation, numbers, etc).

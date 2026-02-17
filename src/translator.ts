@@ -29,11 +29,18 @@ Rules:
 5. If a string is technically untranslatable (like a pure number), return it as is.
 6. Use ALL available context translations AND the filename to infer the best meaning.`;
 
+export interface TranslatorOptions {
+  /** Called after the local-server model is reloaded (e.g. to run fill-gaps and save). */
+  onAfterReload?: () => Promise<void>;
+}
+
 export class Translator {
   private client: OpenAI | null = null;
   private logFile: string;
+  private onAfterReload?: () => Promise<void>;
 
-  constructor() {
+  constructor(options?: TranslatorOptions) {
+    this.onAfterReload = options?.onAfterReload;
     if (config.translationBackend === 'api') {
       this.client = new OpenAI({
         apiKey: config.openai.apiKey,
@@ -257,6 +264,14 @@ export class Translator {
             const reloadWaitMs = 8000;
             await new Promise((r) => setTimeout(r, reloadWaitMs));
             console.log(`   ⏳ Waited ${reloadWaitMs / 1000}s for server to stabilize`);
+            if (this.onAfterReload) {
+              try {
+                await this.onAfterReload();
+              } catch (e) {
+                this.log(`[RELOAD] onAfterReload failed: ${e}`);
+                console.warn(`   ⚠️  onAfterReload failed:`, e);
+              }
+            }
           }
         } catch (e) {
           this.log(`[RELOAD] Failed: ${e}`);
@@ -275,11 +290,21 @@ export class Translator {
       enable_thinking: config.localServer.enableThinking,
     };
 
-    const res = await fetch(url, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(body),
-    });
+    let res: Response;
+    try {
+      res = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      });
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e);
+      const hint =
+        msg.includes('fetch failed') || msg.includes('ECONNREFUSED') || msg.includes('ENOTFOUND')
+          ? `\n\n💡 Is the local MLX server running? Start it in another terminal:\n   pnpm mlx-server\n   (or: python mlx-server/mlx_server.py -m <model-path> -p 8765)`
+          : '';
+      throw new Error(`Cannot connect to local server at ${url}: ${msg}${hint}`);
+    }
 
     if (!res.ok) {
       const errText = await res.text();

@@ -54,6 +54,7 @@ memory-bank/
 Thumbs.db
 
 # Temporary files
+/temp
 *.tmp
 *.bak
 *.backup

@@ -61,6 +61,8 @@ pnpm fill-gaps input/business50/localization.json input/business50
 
 Результат запишется в `input/business50/localization.json` (файл обновится). Лог — в `logs/fill-gaps-*.log`.
 
+**Нормализация:** Ключи, у которых все значения пустые (null) или только один пробел, приводятся к одному пробелу `" "` во всех языках. Подробнее: [NORMALIZATION-RULES.md](NORMALIZATION-RULES.md).
+
 ---
 
 ## Шаг 4. Перевод отсутствующих строк
@@ -68,6 +70,16 @@ pnpm fill-gaps input/business50/localization.json input/business50
 Заполните оставшиеся `null` через LLM или локальную модель.
 
 ### Вариант A: Локальная модель (Qwen, MLX, без API)
+
+**Рекомендуемый способ (остановка старых процессов + проверка .env):**
+
+```bash
+./restart-translation.sh
+```
+
+Скрипт завершает запущенные MLX-сервер и перевод, проверяет конфиг (в т.ч. что `ENABLE_MODEL_THINKING=false`), затем запускает перевод для `input/business50/localization.json`.
+
+**Запуск с указанием файла:**
 
 ```bash
 ./run_translation.sh input/business50/localization.json
@@ -145,7 +157,8 @@ pnpm aggregate input/business50
 pnpm fill-gaps input/business50/localization.json input/business50
 
 # 4. Перевод (один из вариантов)
-./run_translation.sh input/business50/localization.json
+./restart-translation.sh
+# или: ./run_translation.sh input/business50/localization.json
 # или: TRANSLATION_BACKEND=api pnpm translate input/business50/localization.json --required=ru,en,ua
 
 # 5. Восстановление

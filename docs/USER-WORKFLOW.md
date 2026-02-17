@@ -66,7 +66,7 @@ pnpm aggregate input/business50
 pnpm fill-gaps input/business50/localization.json input/business50
 ```
 
-Файл `localization.json` обновится; лог — в `logs/`.
+Файл `localization.json` обновится; лог — в `logs/`. Ключи без перевода (все null или один пробел) нормализуются в один пробел во всех языках — см. [NORMALIZATION-RULES.md](NORMALIZATION-RULES.md).
 
 ---
 
@@ -74,10 +74,18 @@ pnpm fill-gaps input/business50/localization.json input/business50
 
 Заполнение оставшихся `null`.
 
-**Локальная модель (Qwen/MLX):**
+**Локальная модель (Qwen/MLX) — рекомендуется:**
 
 ```bash
-./run_translation.sh input/business50/localization.json
+./restart-translation.sh
+```
+
+Останавливает старые процессы, проверяет `.env` (в т.ч. `ENABLE_MODEL_THINKING=false`), запускает перевод для `input/business50/localization.json`.
+
+**Локальная модель с другим файлом:**
+
+```bash
+./run_translation.sh output/business50/localization.json
 ```
 
 **API (OpenAI и др.):** настройте `.env` (OPENAI_API_KEY), затем:
@@ -120,7 +128,7 @@ pnpm create-archives output/business50
 Распаковка (file-*.tar.gz → input/.../en/, ru/, ua/)
     → Агрегация (pnpm aggregate)
     → [опционально] fill-gaps
-    → Перевод (run_translation.sh или pnpm translate)
+    → Перевод (restart-translation.sh / run_translation.sh или pnpm translate)
     → Восстановление (pnpm restore)
     → Архивы (pnpm create-archives)
     → Загрузка в Bitrix24

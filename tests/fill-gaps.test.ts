@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest';
 import {
   normalizeSourceText,
   buildSourceTextIndex,
+  fillAllNullOrWhitespaceOnlyKeys,
   fillGaps,
 } from '../src/fill-gaps.js';
 import type { TranslationMap } from '../src/utils.js';
@@ -126,5 +127,62 @@ describe('fillGaps', () => {
 
     expect(s1).toBe(2);
     expect(s2).toBe(0);
+  });
+});
+
+describe('fillAllNullOrWhitespaceOnlyKeys', () => {
+  it('sets all languages to " " when all values are null', () => {
+    const data: TranslationMap = {
+      'file.php': {
+        WZD_REF_BRAND_DESCR_COMPANY1: { en: null, ru: null, tr: null, ua: null },
+      },
+    };
+    const logs: string[] = [];
+    const { substitutions } = fillAllNullOrWhitespaceOnlyKeys(data, (m) => logs.push(m));
+
+    expect(substitutions).toBe(4);
+    expect(data['file.php']!['WZD_REF_BRAND_DESCR_COMPANY1']).toEqual({
+      en: ' ',
+      ru: ' ',
+      tr: ' ',
+      ua: ' ',
+    });
+    expect(logs.length).toBe(4);
+    expect(logs.some((l) => l.includes('WZD_REF_BRAND_DESCR_COMPANY1') && l.includes('→ " "'))).toBe(true);
+  });
+
+  it('sets all languages to " " when one is " " and rest are null', () => {
+    const data: TranslationMap = {
+      'file.php': {
+        SALE_WIZARD_PS_BILL_: { en: null, ru: ' ', tr: null, ua: null },
+      },
+    };
+    const logs: string[] = [];
+    const { substitutions } = fillAllNullOrWhitespaceOnlyKeys(data, (m) => logs.push(m));
+
+    expect(substitutions).toBe(3); // en, tr, ua changed; ru already " "
+    expect(data['file.php']!['SALE_WIZARD_PS_BILL_']).toEqual({
+      en: ' ',
+      ru: ' ',
+      tr: ' ',
+      ua: ' ',
+    });
+  });
+
+  it('leaves keys unchanged when at least one value has real content', () => {
+    const data: TranslationMap = {
+      'file.php': {
+        HAS_REAL: { en: 'Hello', ru: null, tr: null, ua: null },
+      },
+    };
+    const { substitutions } = fillAllNullOrWhitespaceOnlyKeys(data, () => {});
+
+    expect(substitutions).toBe(0);
+    expect(data['file.php']!['HAS_REAL']).toEqual({
+      en: 'Hello',
+      ru: null,
+      tr: null,
+      ua: null,
+    });
   });
 });

@@ -19,10 +19,8 @@ MODEL_PATH="${MLX_MODEL_PATH:-$HOME/.lmstudio/models/lmstudio-community/Qwen3-8B
 SERVER_PORT="${LOCAL_SERVER_PORT:-8765}"
 SERVER_URL="http://127.0.0.1:$SERVER_PORT"
 
-# Default translation args
-# In-place: read/write same file for resumability (interrupt with Ctrl+C, resume on next run)
-INPUT_FILE="${1:-input/business50/localization.json}"
-REQUIRED_LANGS="${REQUIRED_LANGS:-ru,tr,en}"
+# Default translation args (REQUIRED_LANGS default applied after .env below so .env can override)
+INPUT_FILE="${1:-output/business50/localization.json}"
 OUTPUT_DIR="${OUTPUT_DIR:-.}"
 [ $# -gt 0 ] && shift
 
@@ -61,6 +59,9 @@ if [ -f "$SCRIPT_DIR/.env" ]; then
   source "$SCRIPT_DIR/.env"
   set +a
 fi
+
+# Apply script defaults only when not set by .env (in-place: same file for resumability)
+REQUIRED_LANGS="${REQUIRED_LANGS:-ru,tr,en}"
 
 # Ensure local-server backend for this run
 export TRANSLATION_BACKEND="${TRANSLATION_BACKEND:-local-server}"
