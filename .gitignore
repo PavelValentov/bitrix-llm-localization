@@ -35,7 +35,7 @@ input/
 *~
 
 # Memory Bank (internal AI context)
-memory-bank/
+datarim/
 
 # Internal reports / debug docs (root only)
 /CHECK-*.md
